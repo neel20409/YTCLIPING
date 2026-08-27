@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -57,12 +58,15 @@ def save_custom_cookies(cookie_content: str) -> Optional[str]:
         f.write(clean_content)
     return str(cookies_path)
 
+if raw_cookie_content:
+    save_custom_cookies(raw_cookie_content)
+
 def get_active_cookies_file() -> Optional[str]:
     """Dynamically return the active sanitized cookies file path if available."""
     cookies_path = TEMP_DIR / "clean_cookies.txt"
-    if cookies_path.exists() and cookies_path.getsize() > 0:
+    if cookies_path.exists() and cookies_path.stat().st_size > 0:
         return str(cookies_path)
-    return YTDLP_COOKIES_FILE
+    return os.getenv("YTDLP_COOKIES_FILE")
 
 
 
