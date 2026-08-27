@@ -22,8 +22,8 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if not info:
-                return None
-            
+                raise RuntimeError("yt-dlp returned no video info.")
+
             return {
                 "id": info.get("id", ""),
                 "title": info.get("title", "Untitled Video"),
@@ -36,7 +36,7 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
             }
     except Exception as e:
         print(f"Error extracting video info: {e}")
-        return None
+        raise RuntimeError(f"Failed to load video info: {e}") from e
 
 def download_video(url: str, filename_prefix: str = "source_video",
                     progress_hook: Optional[Callable[[Dict[str, Any]], None]] = None) -> Optional[str]:

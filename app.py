@@ -658,7 +658,11 @@ st.markdown("<div style='margin-bottom:2rem'></div>", unsafe_allow_html=True)
 # ── Load Video ─────────────────────────────────────────────────────────────────
 if fetch_btn and youtube_url:
     with st.spinner("Fetching video metadata & subtitles…"):
-        info = get_video_info(youtube_url)
+        info, load_err = None, None
+        try:
+            info = get_video_info(youtube_url)
+        except Exception as e:
+            load_err = str(e)
         if info:
             st.session_state.video_info = info
             st.session_state.local_source_path = None
@@ -669,6 +673,9 @@ if fetch_btn and youtube_url:
             st.toast("Video loaded!", icon="✅")
         else:
             st.error("Couldn't load video — check the URL and try again.")
+            if load_err:
+                with st.expander("Show technical details"):
+                    st.code(load_err)
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 if st.session_state.video_info:
