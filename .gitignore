@@ -1,0 +1,27 @@
+# Secret / Environment variables
+.env
+*.env
+
+# Python bytecode / cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Dynamic output & temporary directories
+output/
+temp/
+
+# Media files
+*.mp4
+*.mp3
+*.wav
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
