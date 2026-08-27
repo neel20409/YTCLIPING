@@ -16,6 +16,9 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         # connection attempt to an IPv6 address hangs indefinitely instead of
         # failing over to IPv4. Forcing IPv4 avoids that class of hang entirely.
         "source_address": "0.0.0.0",
+        "extractor_args": {
+            "youtube": {"player_client": ["android", "ios", "mweb", "web"]},
+        },
     }
     if YTDLP_COOKIES_FILE:
         ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
@@ -74,7 +77,7 @@ def download_video(url: str, filename_prefix: str = "source_video",
         # and commonly return "HTTP Error 403: Forbidden" from cloud/datacenter hosting.
         # The android/ios clients get less-restricted URLs, so try those first.
         "extractor_args": {
-            "youtube": {"player_client": ["android", "ios", "web"]},
+            "youtube": {"player_client": ["android", "ios", "mweb", "web"]},
         },
     }
     if progress_hook:
