@@ -16,7 +16,7 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         "geo_bypass": True,
         "geo_bypass_country": "IN",
         "extractor_args": {
-            "youtube": {"player_client": ["tv", "android", "ios"]},
+            "youtube": {"player_client": ["android", "ios"]},
         },
     }
     proxy = os.getenv("YTDLP_PROXY")
@@ -83,7 +83,7 @@ def download_video(url: str, filename_prefix: str = "source_video",
         "geo_bypass": True,
         "geo_bypass_country": "IN",
         "extractor_args": {
-            "youtube": {"player_client": ["tv", "android", "ios"]},
+            "youtube": {"player_client": ["android", "ios"]},
         },
     }
     proxy = os.getenv("YTDLP_PROXY")
