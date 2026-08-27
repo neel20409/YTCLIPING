@@ -2,8 +2,6 @@
 
 An AI-powered web application built with **Streamlit**, **Google Gemini AI**, and **yt-dlp** that automatically analyzes YouTube videos, extracts transcripts, identifies viral/engaging highlights, and cuts short-form video clips for TikTok, YouTube Shorts, and Instagram Reels.
 
-![Preview](preview.png)
-
 ## ✨ Features
 
 - 🤖 **AI-Powered Highlight Detection**: Uses Google Gemini API to analyze transcript context and detect key moments, hooks, and highlights.

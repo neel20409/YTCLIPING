@@ -15,10 +15,15 @@ env/
 output/
 temp/
 
-# Media files
+# Media & Image files
 *.mp4
 *.mp3
 *.wav
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
 
 # IDE and OS files
 .vscode/
