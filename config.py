@@ -47,15 +47,22 @@ else:
     else:
         raw_cookie_content = None
 
-if raw_cookie_content:
-    clean_content = _sanitize_cookies(raw_cookie_content)
+def save_custom_cookies(cookie_content: str) -> Optional[str]:
+    """Save user-provided cookies content from Streamlit UI after sanitizing."""
+    if not cookie_content or not cookie_content.strip():
+        return None
+    clean_content = _sanitize_cookies(cookie_content.strip())
     cookies_path = TEMP_DIR / "clean_cookies.txt"
     with open(cookies_path, "w", encoding="utf-8") as f:
         f.write(clean_content)
-    YTDLP_COOKIES_FILE = str(cookies_path)
-    print(f"[config] Using sanitized yt-dlp cookies file: {YTDLP_COOKIES_FILE} ({os.path.getsize(YTDLP_COOKIES_FILE)} bytes)")
-else:
-    YTDLP_COOKIES_FILE = None
-    print("[config] No yt-dlp cookies file found (checked YTDLP_COOKIES_TEXT env, YTDLP_COOKIES_FILE env, /etc/secrets/cookies.txt, ./cookies.txt)")
+    return str(cookies_path)
+
+def get_active_cookies_file() -> Optional[str]:
+    """Dynamically return the active sanitized cookies file path if available."""
+    cookies_path = TEMP_DIR / "clean_cookies.txt"
+    if cookies_path.exists() and cookies_path.getsize() > 0:
+        return str(cookies_path)
+    return YTDLP_COOKIES_FILE
+
 
 

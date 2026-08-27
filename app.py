@@ -18,7 +18,7 @@ try:
 except Exception:
     pass
 
-from config import OUTPUT_DIR, GEMINI_API_KEY
+from config import OUTPUT_DIR, GEMINI_API_KEY, save_custom_cookies, get_active_cookies_file
 from core.downloader import get_video_info, download_video
 from core.transcript import fetch_transcript, format_transcript_chunks
 from core.ai_clipper import find_best_clips
@@ -630,6 +630,22 @@ with st.sidebar:
         st.caption("Clips are picked using simple rules instead of AI. Ask whoever set this up to add an AI key for smarter results.")
 
     st.divider()
+    with st.expander("🔓 Geoblocked / TMKOC Video Fix", expanded=False):
+        st.caption("If a video is region-restricted to India (e.g. TMKOC / Sony SAB), paste your cookies.txt text below:")
+        user_cookies = st.text_area("Cookies Text", height=100, placeholder="# Netscape HTTP Cookie File\n.youtube.com TRUE ...", label_visibility="collapsed")
+        if st.button("Apply Cookies", use_container_width=True):
+            if user_cookies.strip():
+                saved_path = save_custom_cookies(user_cookies)
+                if saved_path:
+                    st.success("Cookies applied! You can now load geoblocked videos.")
+                else:
+                    st.error("Could not process cookies text.")
+            else:
+                st.warning("Please paste valid cookies content.")
+        if get_active_cookies_file():
+            st.caption("✅ Active cookies loaded")
+
+    st.divider()
     if st.button("🗑️ Clear Output Clips", use_container_width=True):
         clean_directory(OUTPUT_DIR)
         st.success("Cleared!")
@@ -677,6 +693,8 @@ if fetch_btn and youtube_url:
         else:
             st.error("Couldn't load video — check the URL and try again.")
             if load_err:
+                if "not made this video available in your country" in str(load_err).lower():
+                    st.warning("⚠️ **Region-Restricted Video**: This video is geoblocked to India. Open **🔓 Geoblocked / TMKOC Video Fix** in the left sidebar, paste your YouTube cookies text, and click **Apply Cookies** to unlock it!")
                 with st.expander("Show technical details"):
                     st.code(load_err)
 

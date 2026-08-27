@@ -1,7 +1,7 @@
 import os
 from typing import Dict, Any, Optional, Callable
 import yt_dlp
-from config import TEMP_DIR, YTDLP_COOKIES_FILE
+from config import TEMP_DIR, get_active_cookies_file
 from core.utils import sanitize_filename
 
 def get_video_info(url: str) -> Optional[Dict[str, Any]]:
@@ -24,9 +24,10 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         base_ydl_opts["proxy"] = proxy
 
     opts_list = []
-    if YTDLP_COOKIES_FILE:
+    active_cookies = get_active_cookies_file()
+    if active_cookies:
         cookie_opts = dict(base_ydl_opts)
-        cookie_opts["cookiefile"] = YTDLP_COOKIES_FILE
+        cookie_opts["cookiefile"] = active_cookies
         opts_list.append(cookie_opts)
     opts_list.append(base_ydl_opts)
 
@@ -90,9 +91,10 @@ def download_video(url: str, filename_prefix: str = "source_video",
         base_ydl_opts["proxy"] = proxy
 
     opts_list = []
-    if YTDLP_COOKIES_FILE:
+    active_cookies = get_active_cookies_file()
+    if active_cookies:
         cookie_opts = dict(base_ydl_opts)
-        cookie_opts["cookiefile"] = YTDLP_COOKIES_FILE
+        cookie_opts["cookiefile"] = active_cookies
         opts_list.append(cookie_opts)
     opts_list.append(base_ydl_opts)
 
