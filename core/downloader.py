@@ -10,6 +10,8 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         "quiet": True,
         "no_warnings": True,
         "extract_flat": False,
+        "socket_timeout": 15,
+        "retries": 3,
     }
     
     try:
@@ -54,6 +56,13 @@ def download_video(url: str, filename_prefix: str = "source_video",
         "no_warnings": True,
         "overwrites": True,
         "merge_output_format": "mp4",
+        # Bound how long a stalled/throttled connection (common on cloud/datacenter
+        # IPs YouTube rate-limits) can hang, so a bad connection fails fast instead
+        # of leaving the UI stuck at "0.0 MB so far" forever.
+        "socket_timeout": 15,
+        "retries": 3,
+        "fragment_retries": 3,
+        "extractor_retries": 1,
     }
     if progress_hook:
         ydl_opts["progress_hooks"] = [progress_hook]
@@ -62,8 +71,8 @@ def download_video(url: str, filename_prefix: str = "source_video",
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             if not info:
-                return None
-            
+                raise RuntimeError("yt-dlp returned no video info.")
+
             # Find requested file
             filename = ydl.prepare_filename(info)
             # Ensure mp4 extension if merged
@@ -73,7 +82,7 @@ def download_video(url: str, filename_prefix: str = "source_video",
                 return mp4_file
             elif os.path.exists(filename):
                 return filename
-            return None
+            raise RuntimeError("Download reported success but no output file was found.")
     except Exception as e:
         print(f"Error downloading video: {e}")
-        return None
+        raise RuntimeError(f"Failed to download video: {e}") from e

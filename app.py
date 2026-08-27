@@ -743,10 +743,14 @@ if st.session_state.video_info:
                     n_total = len(display_clips)
                     prog = st.progress(0, text="Starting…")
 
+                    dl_err = None
                     if not st.session_state.local_source_path or not os.path.exists(st.session_state.local_source_path):
-                        st.session_state.local_source_path = _download_with_progress(prog, info["url"], f"source_{info['id']}")
-                        if st.session_state.local_source_path:
+                        try:
+                            st.session_state.local_source_path = _download_with_progress(prog, info["url"], f"source_{info['id']}")
                             prog.progress(1.0, text="⬇️ Download complete — preparing to cut…")
+                        except Exception as e:
+                            st.session_state.local_source_path = None
+                            dl_err = str(e)
 
                     if st.session_state.local_source_path:
                         batch_err = None
@@ -783,6 +787,9 @@ if st.session_state.video_info:
                     else:
                         prog.empty()
                         st.error("Couldn't download the source video. Please try again.")
+                        if dl_err:
+                            with st.expander("Show technical details"):
+                                st.code(dl_err)
                 st.caption("Cuts every clip below in one go, using any timing you've adjusted. This can take several minutes for long videos — please wait for it to finish instead of clicking again.")
 
             # ── Clip cards ─────────────────────────────────────────────────────
