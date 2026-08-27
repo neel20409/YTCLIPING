@@ -188,7 +188,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Word,Arial Black,{fontsize},{accent_ass},&H000000FF&,&H00000000&,&H00000000&,-1,0,0,0,100,100,0,0,1,{outline},1,{alignment},60,60,{marginv},1
+Style: Word,DejaVu Sans,{fontsize},{accent_ass},&H000000FF&,&H00000000&,&H00000000&,-1,0,0,0,100,100,0,0,1,{outline},1,{alignment},60,60,{marginv},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -257,7 +257,7 @@ def render_clip(
                 esc = _escape_srt_path(srt_path)
                 alignment, marginv = _position_alignment(caption_position, play_res[1], style="classic", custom_pct=caption_custom_pct)
                 sub_style = (
-                    "FontName=Arial,FontSize=22,Bold=1,"
+                    "FontName=DejaVu Sans,FontSize=22,Bold=1,"
                     "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
                     f"Outline=2,Shadow=1,Alignment={alignment},MarginV={marginv}"
                 )
@@ -348,6 +348,7 @@ def render_clip(
     except subprocess.CalledProcessError as e:
         print(f"FFmpeg render error: {e.stderr}")
         # Fallback to direct stream copy without filter if complex filter fails
+        fallback_stderr = ""
         try:
             fallback_cmd = [
                 "ffmpeg", "-y",
@@ -357,11 +358,18 @@ def render_clip(
                 "-c", "copy",
                 output_file_path
             ]
-            subprocess.run(fallback_cmd, check=True)
-            if os.path.exists(output_file_path):
+            fb = subprocess.run(fallback_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+            fallback_stderr = fb.stderr or ""
+            if fb.returncode == 0 and os.path.exists(output_file_path) and os.path.getsize(output_file_path) > 0:
                 if progress_callback:
                     progress_callback(1.0)
                 return output_file_path
-        except Exception:
-            pass
-        return None
+        except Exception as fb_exc:
+            fallback_stderr = str(fb_exc)
+
+        print(f"FFmpeg fallback error: {fallback_stderr}")
+        raise RuntimeError(
+            "FFmpeg failed to render this clip.\n\n"
+            f"Primary attempt error:\n{(e.stderr or '').strip()[-1500:]}\n\n"
+            f"Fallback attempt error:\n{fallback_stderr.strip()[-1500:]}"
+        ) from e

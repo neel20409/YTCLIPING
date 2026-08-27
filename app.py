@@ -749,6 +749,8 @@ if st.session_state.video_info:
                             prog.progress(1.0, text="⬇️ Download complete — preparing to cut…")
 
                     if st.session_state.local_source_path:
+                        batch_err = None
+                        n_done = 0
                         for b_idx, (orig_i, clip) in enumerate(display_clips):
                             r_start, r_end = _clip_edit_range(orig_i, clip)
 
@@ -757,17 +759,27 @@ if st.session_state.video_info:
                                 prog.progress(max(0.0, min(1.0, overall)),
                                               text=f"✂️ Cutting clip {_idx+1}/{n_total} — {int(frac*100)}%: {_title}")
 
-                            render_clip(st.session_state.local_source_path,
-                                r_start, r_end,
-                                output_name=f"{info['id']}_{clip['title']}",
-                                aspect_ratio=aspect_ratio, crop_mode=crop_mode,
-                                transcript_items=st.session_state.raw_transcript,
-                                burn_captions=burn_captions,
-                                caption_style=caption_style, accent_color=accent_color,
-                                caption_position=caption_position, caption_custom_pct=caption_custom_pct,
-                                progress_callback=_render_hook)
+                            try:
+                                render_clip(st.session_state.local_source_path,
+                                    r_start, r_end,
+                                    output_name=f"{info['id']}_{clip['title']}",
+                                    aspect_ratio=aspect_ratio, crop_mode=crop_mode,
+                                    transcript_items=st.session_state.raw_transcript,
+                                    burn_captions=burn_captions,
+                                    caption_style=caption_style, accent_color=accent_color,
+                                    caption_position=caption_position, caption_custom_pct=caption_custom_pct,
+                                    progress_callback=_render_hook)
+                                n_done += 1
+                            except Exception as e:
+                                batch_err = str(e)
+                                break
                         prog.empty()
-                        st.success(f"✅ All {n_total} clips are ready! Find them in the 📂 Gallery tab.")
+                        if batch_err:
+                            st.error(f"Something went wrong after cutting {n_done}/{n_total} clips. Please try again.")
+                            with st.expander("Show technical details"):
+                                st.code(batch_err)
+                        else:
+                            st.success(f"✅ All {n_total} clips are ready! Find them in the 📂 Gallery tab.")
                     else:
                         prog.empty()
                         st.error("Couldn't download the source video. Please try again.")
@@ -807,17 +819,26 @@ if st.session_state.video_info:
                     cut_clicked = st.button("✂️  Cut This Clip", key=f"r_{scan_id}_{orig_i}", type="primary", use_container_width=True)
                 st.caption("Downloads the video once, then cuts out this part. Short videos finish in under a minute — long ones can take several minutes. Please don't click this again or navigate away while it's running; that will cancel it and you'll have to start over. It's saved to the 📂 Gallery tab when done.")
                 if cut_clicked:
-                    out = _cut_clip_with_progress(
-                        info["url"], f"source_{info['id']}", r_start, r_end,
-                        output_name=f"{info['id']}_{clip['title']}",
-                        render_kwargs=dict(
-                            aspect_ratio=aspect_ratio, crop_mode=crop_mode,
-                            transcript_items=st.session_state.raw_transcript,
-                            burn_captions=burn_captions,
-                            caption_style=caption_style, accent_color=accent_color,
-                            caption_position=caption_position, caption_custom_pct=caption_custom_pct))
-                    if out: st.success("✅ Clip ready! Find it anytime in the 📂 Gallery tab."); st.video(out)
-                    else: st.error("Something went wrong while cutting this clip. Please try again.")
+                    err_detail = None
+                    try:
+                        out = _cut_clip_with_progress(
+                            info["url"], f"source_{info['id']}", r_start, r_end,
+                            output_name=f"{info['id']}_{clip['title']}",
+                            render_kwargs=dict(
+                                aspect_ratio=aspect_ratio, crop_mode=crop_mode,
+                                transcript_items=st.session_state.raw_transcript,
+                                burn_captions=burn_captions,
+                                caption_style=caption_style, accent_color=accent_color,
+                                caption_position=caption_position, caption_custom_pct=caption_custom_pct))
+                    except Exception as e:
+                        out, err_detail = None, str(e)
+                    if out:
+                        st.success("✅ Clip ready! Find it anytime in the 📂 Gallery tab."); st.video(out)
+                    else:
+                        st.error("Something went wrong while cutting this clip. Please try again.")
+                        if err_detail:
+                            with st.expander("Show technical details"):
+                                st.code(err_detail)
                 st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Manual Tab ────────────────────────────────────────────────────────────
@@ -864,17 +885,26 @@ if st.session_state.video_info:
             if clip_len <= 0:
                 st.error("Invalid time range.")
             else:
-                out = _cut_clip_with_progress(
-                    info["url"], f"source_{info['id']}", calc_start, calc_end,
-                    output_name=f"manual_{info['id']}_{seconds_to_hms(calc_start)}",
-                    render_kwargs=dict(
-                        aspect_ratio=aspect_ratio, crop_mode=crop_mode,
-                        transcript_items=st.session_state.raw_transcript,
-                        burn_captions=burn_captions,
-                        caption_style=caption_style, accent_color=accent_color,
-                        caption_position=caption_position, caption_custom_pct=caption_custom_pct))
-                if out: st.success("✅ Clip ready! Find it anytime in the 📂 Gallery tab."); st.video(out)
-                else: st.error("Something went wrong while cutting this clip. Please try again.")
+                err_detail = None
+                try:
+                    out = _cut_clip_with_progress(
+                        info["url"], f"source_{info['id']}", calc_start, calc_end,
+                        output_name=f"manual_{info['id']}_{seconds_to_hms(calc_start)}",
+                        render_kwargs=dict(
+                            aspect_ratio=aspect_ratio, crop_mode=crop_mode,
+                            transcript_items=st.session_state.raw_transcript,
+                            burn_captions=burn_captions,
+                            caption_style=caption_style, accent_color=accent_color,
+                            caption_position=caption_position, caption_custom_pct=caption_custom_pct))
+                except Exception as e:
+                    out, err_detail = None, str(e)
+                if out:
+                    st.success("✅ Clip ready! Find it anytime in the 📂 Gallery tab."); st.video(out)
+                else:
+                    st.error("Something went wrong while cutting this clip. Please try again.")
+                    if err_detail:
+                        with st.expander("Show technical details"):
+                            st.code(err_detail)
 
     # ── Gallery Tab ───────────────────────────────────────────────────────────
     with tab_gallery:
