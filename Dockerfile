@@ -11,6 +11,7 @@ ENV PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     fonts-dejavu-core \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
