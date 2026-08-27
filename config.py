@@ -21,33 +21,15 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 DEFAULT_MAX_DURATION_SEC = 3600  # 1 hour max video processing limit
 
 def _sanitize_cookies(cookie_content: str) -> str:
-    """Convert cookies into clean anonymous visitor cookies to pass YouTube cloud bot checks."""
-    account_keys = {
-        "SID", "HSID", "SSID", "APISID", "SAPISID", "LOGIN_INFO", "SIDCC",
-        "__Secure-1PSID", "__Secure-3PSID", "__Secure-1PAPISID", "__Secure-3PAPISID",
-        "__Secure-1PSIDTS", "__Secure-3PSIDTS", "__Secure-1PSIDCC", "__Secure-3PSIDCC"
-    }
-    clean_lines = []
-    # Handle literal escaped \n if present in env vars
-    content_str = cookie_content.replace("\\n", "\n")
-    for line in content_str.splitlines():
-        line_str = line.strip()
-        if not line_str or line_str.startswith("#"):
-            clean_lines.append(line)
-            continue
+    """Normalize pasted/env-provided cookies.txt content.
 
-        # Check if line contains any account keys (splitting by tab or spaces)
-        tokens = line_str.split()
-        is_account_token = False
-        for token in tokens:
-            if token in account_keys:
-                is_account_token = True
-                break
-
-        if not is_account_token:
-            clean_lines.append(line)
-
-    return "\n".join(clean_lines)
+    Deliberately does NOT strip account cookies (SID, HSID, LOGIN_INFO, etc.) —
+    YouTube's "Sign in to confirm you're not a bot" check specifically requires a
+    real authenticated session, so removing those defeats the entire point of
+    supplying cookies for that check. Only normalizes escaped newlines, which
+    show up when cookie content is passed through an env var.
+    """
+    return cookie_content.replace("\\n", "\n")
 
 # yt-dlp cookies (Netscape cookies.txt format) used to pass YouTube's region & bot checks.
 cookies_text = os.getenv("YTDLP_COOKIES_TEXT")

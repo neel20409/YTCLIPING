@@ -6,6 +6,7 @@ __pycache__/
 .env
 *.env
 cookies.txt
+*cookies*.txt
 temp/
 output/
 venv/
