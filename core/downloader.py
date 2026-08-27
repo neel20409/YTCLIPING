@@ -68,6 +68,12 @@ def download_video(url: str, filename_prefix: str = "source_video",
         "fragment_retries": 3,
         "extractor_retries": 1,
         "source_address": "0.0.0.0",
+        # YouTube's default "web" client serves CDN URLs that are aggressively IP-locked
+        # and commonly return "HTTP Error 403: Forbidden" from cloud/datacenter hosting.
+        # The android/ios clients get less-restricted URLs, so try those first.
+        "extractor_args": {
+            "youtube": {"player_client": ["android", "ios", "web"]},
+        },
     }
     if progress_hook:
         ydl_opts["progress_hooks"] = [progress_hook]
@@ -83,10 +89,11 @@ def download_video(url: str, filename_prefix: str = "source_video",
             # Ensure mp4 extension if merged
             base, _ = os.path.splitext(filename)
             mp4_file = f"{base}.mp4"
-            if os.path.exists(mp4_file):
-                return mp4_file
-            elif os.path.exists(filename):
-                return filename
+            for candidate in (mp4_file, filename):
+                if os.path.exists(candidate):
+                    if os.path.getsize(candidate) == 0:
+                        raise RuntimeError("Downloaded file is empty (0 bytes) — the video source likely rejected the request.")
+                    return candidate
             raise RuntimeError("Download reported success but no output file was found.")
     except Exception as e:
         print(f"Error downloading video: {e}")
