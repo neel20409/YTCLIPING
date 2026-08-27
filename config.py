@@ -19,15 +19,21 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Default processing settings
 DEFAULT_MAX_DURATION_SEC = 3600  # 1 hour max video processing limit
 
-# yt-dlp cookies (Netscape cookies.txt format) used to pass YouTube's "sign in to
-# confirm you're not a bot" challenge, which cloud/datacenter IPs trigger even for
-# plain metadata requests. Never committed to git — supplied at runtime as a Render
-# Secret File (mounted under /etc/secrets/) or a local, gitignored file for testing.
-YTDLP_COOKIES_FILE = os.getenv("YTDLP_COOKIES_FILE") or next(
-    (p for p in ("/etc/secrets/cookies.txt", str(BASE_DIR / "cookies.txt")) if os.path.exists(p)),
-    None,
-)
+# yt-dlp cookies (Netscape cookies.txt format) used to pass YouTube's region & bot checks.
+cookies_text = os.getenv("YTDLP_COOKIES_TEXT")
+if cookies_text:
+    cookies_path = TEMP_DIR / "cookies.txt"
+    with open(cookies_path, "w", encoding="utf-8") as f:
+        f.write(cookies_text.strip())
+    YTDLP_COOKIES_FILE = str(cookies_path)
+else:
+    YTDLP_COOKIES_FILE = os.getenv("YTDLP_COOKIES_FILE") or next(
+        (p for p in ("/etc/secrets/cookies.txt", str(BASE_DIR / "cookies.txt")) if os.path.exists(p)),
+        None,
+    )
+
 if YTDLP_COOKIES_FILE:
     print(f"[config] Using yt-dlp cookies file: {YTDLP_COOKIES_FILE} ({os.path.getsize(YTDLP_COOKIES_FILE)} bytes)")
 else:
-    print("[config] No yt-dlp cookies file found (checked YTDLP_COOKIES_FILE env, /etc/secrets/cookies.txt, ./cookies.txt)")
+    print("[config] No yt-dlp cookies file found (checked YTDLP_COOKIES_TEXT env, YTDLP_COOKIES_FILE env, /etc/secrets/cookies.txt, ./cookies.txt)")
+
