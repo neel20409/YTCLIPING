@@ -169,6 +169,9 @@ html, body, [class*="css"], .stApp {
   box-shadow: 4px 0 40px rgba(0,0,0,.5) !important;
 }
 [data-testid="stSidebar"] > div:first-child { padding: 1.2rem !important; }
+/* Keep the sidebar permanently open — hide the controls that collapse/re-expand it */
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+[data-testid="collapsedControl"] { display: none !important; }
 
 /* ════════════ INPUTS ════════════ */
 .stTextInput > label { display: none !important; }
