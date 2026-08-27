@@ -12,6 +12,10 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         "extract_flat": False,
         "socket_timeout": 15,
         "retries": 3,
+        # Some cloud hosts advertise IPv6 but have it silently blackholed, so a
+        # connection attempt to an IPv6 address hangs indefinitely instead of
+        # failing over to IPv4. Forcing IPv4 avoids that class of hang entirely.
+        "source_address": "0.0.0.0",
     }
     
     try:
@@ -63,6 +67,7 @@ def download_video(url: str, filename_prefix: str = "source_video",
         "retries": 3,
         "fragment_retries": 3,
         "extractor_retries": 1,
+        "source_address": "0.0.0.0",
     }
     if progress_hook:
         ydl_opts["progress_hooks"] = [progress_hook]

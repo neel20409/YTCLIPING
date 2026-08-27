@@ -34,25 +34,49 @@ def _download_with_progress(bar, source_url, source_id):
     """Runs download_video() in a background thread and polls its progress from the main
     thread. yt-dlp calls progress_hooks from its own fragment-downloader worker threads —
     calling Streamlit UI updates directly from there stalls the session, so the hook only
-    writes plain numbers into a shared dict and the main thread does the actual bar.progress()."""
+    writes plain numbers into a shared dict and the main thread does the actual bar.progress().
+
+    Bounded with a stall timeout: some network failures (e.g. a DNS resolution hang) occur
+    before any socket exists, so they aren't covered by yt-dlp's own socket_timeout option
+    and would otherwise leave this loop — and the whole Streamlit session — stuck forever."""
+    STALL_TIMEOUT_SEC = 60       # abort if zero bytes have arrived after this long
+    ABSOLUTE_TIMEOUT_SEC = 900   # hard ceiling even if bytes are trickling in
+
     dl_state = {"downloaded": 0, "total": None}
 
     def _dl_hook(d):
         dl_state["downloaded"] = d.get("downloaded_bytes", 0)
         dl_state["total"] = d.get("total_bytes") or d.get("total_bytes_estimate")
 
-    with ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(download_video, source_url, source_id, progress_hook=_dl_hook)
-        while not future.done():
-            total, downloaded = dl_state["total"], dl_state["downloaded"]
-            if total:
-                pct = max(0, min(99, int(downloaded / total * 100)))
-                bar.progress(pct / 100, text=f"⬇️ Downloading video… {pct}%")
-            else:
-                mb = downloaded / (1024 * 1024)
-                bar.progress(0.05, text=f"⬇️ Downloading video… {mb:.1f} MB so far")
-            time.sleep(0.3)
-        return future.result()
+    pool = ThreadPoolExecutor(max_workers=1)
+    future = pool.submit(download_video, source_url, source_id, progress_hook=_dl_hook)
+    start = time.monotonic()
+    while not future.done():
+        elapsed = time.monotonic() - start
+        total, downloaded = dl_state["total"], dl_state["downloaded"]
+
+        if downloaded == 0 and elapsed > STALL_TIMEOUT_SEC:
+            pool.shutdown(wait=False)
+            raise RuntimeError(
+                f"No data was received from the video source after {STALL_TIMEOUT_SEC}s. "
+                "This usually means the server's network can't reach YouTube right now "
+                "(e.g. a DNS/connectivity hang, common on shared cloud hosting) rather than "
+                "an issue with this specific video. Please try again shortly."
+            )
+        if elapsed > ABSOLUTE_TIMEOUT_SEC:
+            pool.shutdown(wait=False)
+            raise RuntimeError(f"Download did not finish within {ABSOLUTE_TIMEOUT_SEC}s.")
+
+        if total:
+            pct = max(0, min(99, int(downloaded / total * 100)))
+            bar.progress(pct / 100, text=f"⬇️ Downloading video… {pct}%")
+        else:
+            mb = downloaded / (1024 * 1024)
+            bar.progress(0.05, text=f"⬇️ Downloading video… {mb:.1f} MB so far")
+        time.sleep(0.3)
+
+    pool.shutdown(wait=True)
+    return future.result()
 
 def _cut_clip_with_progress(source_url, source_id, start_sec, end_sec, output_name, render_kwargs):
     """Downloads the source video (if not already cached) and cuts the clip, showing a live % progress bar."""
