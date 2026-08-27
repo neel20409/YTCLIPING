@@ -1,6 +1,7 @@
 # Secret / Environment variables
 .env
 *.env
+cookies.txt
 
 # Python bytecode / cache
 __pycache__/

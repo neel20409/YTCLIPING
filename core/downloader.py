@@ -1,7 +1,7 @@
 import os
 from typing import Dict, Any, Optional, Callable
 import yt_dlp
-from config import TEMP_DIR
+from config import TEMP_DIR, YTDLP_COOKIES_FILE
 from core.utils import sanitize_filename
 
 def get_video_info(url: str) -> Optional[Dict[str, Any]]:
@@ -17,7 +17,9 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         # failing over to IPv4. Forcing IPv4 avoids that class of hang entirely.
         "source_address": "0.0.0.0",
     }
-    
+    if YTDLP_COOKIES_FILE:
+        ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -77,6 +79,8 @@ def download_video(url: str, filename_prefix: str = "source_video",
     }
     if progress_hook:
         ydl_opts["progress_hooks"] = [progress_hook]
+    if YTDLP_COOKIES_FILE:
+        ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
