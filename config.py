@@ -28,16 +28,25 @@ def _sanitize_cookies(cookie_content: str) -> str:
         "__Secure-1PSIDTS", "__Secure-3PSIDTS", "__Secure-1PSIDCC", "__Secure-3PSIDCC"
     }
     clean_lines = []
-    for line in cookie_content.splitlines():
-        if line.startswith("#"):
+    # Handle literal escaped \n if present in env vars
+    content_str = cookie_content.replace("\\n", "\n")
+    for line in content_str.splitlines():
+        line_str = line.strip()
+        if not line_str or line_str.startswith("#"):
             clean_lines.append(line)
             continue
-        parts = line.split("\t")
-        if len(parts) >= 6:
-            cookie_name = parts[5].strip()
-            if cookie_name in account_keys:
-                continue
-        clean_lines.append(line)
+
+        # Check if line contains any account keys (splitting by tab or spaces)
+        tokens = line_str.split()
+        is_account_token = False
+        for token in tokens:
+            if token in account_keys:
+                is_account_token = True
+                break
+
+        if not is_account_token:
+            clean_lines.append(line)
+
     return "\n".join(clean_lines)
 
 # yt-dlp cookies (Netscape cookies.txt format) used to pass YouTube's region & bot checks.
