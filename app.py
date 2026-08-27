@@ -8,12 +8,15 @@ import streamlit as st
 
 # Windows consoles often default to a legacy codepage (e.g. cp1252) that can't
 # encode non-ASCII video titles/filenames, crashing any print() that includes them.
-if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
+# Also force line-buffering everywhere: when stdout isn't a real terminal (e.g. a
+# Docker container on Render), Python fully buffers it, so plain print() calls can
+# sit unflushed indefinitely — invisible in the platform's log viewer — even while
+# yt-dlp's own error output (which flushes explicitly) shows up fine.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+except Exception:
+    pass
 
 from config import OUTPUT_DIR, GEMINI_API_KEY
 from core.downloader import get_video_info, download_video

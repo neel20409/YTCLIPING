@@ -1,5 +1,10 @@
 FROM python:3.11-slim
 
+# Ensure print()/logging output is flushed immediately instead of sitting in
+# Python's stdout buffer, which otherwise hides it from `docker logs`/Render's
+# log viewer until the buffer fills.
+ENV PYTHONUNBUFFERED=1
+
 # ffmpeg for cutting/rendering clips, fonts-dejavu-core so burned-in captions
 # (libass) have a font to render with — same requirement as packages.txt
 # needed for Streamlit Community Cloud.
