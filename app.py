@@ -169,9 +169,20 @@ html, body, [class*="css"], .stApp {
   box-shadow: 4px 0 40px rgba(0,0,0,.5) !important;
 }
 [data-testid="stSidebar"] > div:first-child { padding: 1.2rem !important; }
-/* Keep the sidebar permanently open — hide the controls that collapse/re-expand it */
+/* Keep the sidebar permanently open on every viewport, including the narrow/mobile
+   breakpoint where Streamlit normally auto-collapses it into a hidden drawer. Force
+   it visible regardless of the aria-expanded state Streamlit toggles, and hide only
+   the in-sidebar button that collapses it — never the one that reopens it, or a
+   collapsed mobile sidebar would have no way back. */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"][aria-expanded="false"] {
+  transform: none !important;
+  margin-left: 0 !important;
+  visibility: visible !important;
+  min-width: 21rem !important;
+  width: 21rem !important;
+}
 [data-testid="stSidebarCollapseButton"] { display: none !important; }
-[data-testid="collapsedControl"] { display: none !important; }
 
 /* ════════════ INPUTS ════════════ */
 .stTextInput > label { display: none !important; }
@@ -632,8 +643,7 @@ st.markdown("""
 
 st.markdown(
     '<div style="text-align:center;color:var(--text2);font-size:.82rem;margin:-1.2rem 0 1.8rem;">'
-    '⚙️ Video shape, subtitles, and other settings are in the sidebar on the left — tap '
-    '<b style="color:var(--p2)">☰</b> in the top-left corner if you don\'t see it.</div>',
+    '⚙️ Video shape, subtitles, and other settings are in the sidebar on the left.</div>',
     unsafe_allow_html=True)
 
 # ── URL Input (columns only for input + button, nothing else) ─────────────────
