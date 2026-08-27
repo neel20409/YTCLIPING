@@ -21,12 +21,23 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 DEFAULT_MAX_DURATION_SEC = 3600  # 1 hour max video processing limit
 
 def _sanitize_cookies(cookie_content: str) -> str:
-    """Strip volatile IP-bound session tokens that trigger 'page needs to be reloaded' on cloud IPs."""
-    volatile_keys = {"__Secure-1PSIDTS", "__Secure-3PSIDTS", "SIDCC", "__Secure-1PSIDCC", "__Secure-3PSIDCC", "LOGIN_INFO"}
+    """Convert cookies into clean anonymous visitor cookies to pass YouTube cloud bot checks."""
+    account_keys = {
+        "SID", "HSID", "SSID", "APISID", "SAPISID", "LOGIN_INFO", "SIDCC",
+        "__Secure-1PSID", "__Secure-3PSID", "__Secure-1PAPISID", "__Secure-3PAPISID",
+        "__Secure-1PSIDTS", "__Secure-3PSIDTS", "__Secure-1PSIDCC", "__Secure-3PSIDCC"
+    }
     clean_lines = []
     for line in cookie_content.splitlines():
-        if not any(k in line for k in volatile_keys):
+        if line.startswith("#"):
             clean_lines.append(line)
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 6:
+            cookie_name = parts[5].strip()
+            if cookie_name in account_keys:
+                continue
+        clean_lines.append(line)
     return "\n".join(clean_lines)
 
 # yt-dlp cookies (Netscape cookies.txt format) used to pass YouTube's region & bot checks.
