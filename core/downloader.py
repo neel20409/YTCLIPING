@@ -28,6 +28,11 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
     if active_cookies:
         cookie_opts = dict(base_ydl_opts)
         cookie_opts["cookiefile"] = active_cookies
+        # Cookie-based sign-in is a "web" client mechanism — the android/ios
+        # clients use a different auth model and ignore cookies entirely, so
+        # using them here would silently discard the cookies and hit the same
+        # bot-check every time regardless of whether the cookies are valid.
+        cookie_opts["extractor_args"] = {"youtube": {"player_client": ["web", "android", "ios"]}}
         opts_list.append(cookie_opts)
     opts_list.append(base_ydl_opts)
 
@@ -95,6 +100,8 @@ def download_video(url: str, filename_prefix: str = "source_video",
     if active_cookies:
         cookie_opts = dict(base_ydl_opts)
         cookie_opts["cookiefile"] = active_cookies
+        # See get_video_info: cookies only matter to the "web" client.
+        cookie_opts["extractor_args"] = {"youtube": {"player_client": ["web", "android", "ios"]}}
         opts_list.append(cookie_opts)
     opts_list.append(base_ydl_opts)
 
