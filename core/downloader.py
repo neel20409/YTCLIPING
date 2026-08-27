@@ -16,10 +16,15 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         # connection attempt to an IPv6 address hangs indefinitely instead of
         # failing over to IPv4. Forcing IPv4 avoids that class of hang entirely.
         "source_address": "0.0.0.0",
+        "geo_bypass": True,
+        "geo_bypass_country": "IN",
         "extractor_args": {
             "youtube": {"player_client": ["android", "ios", "mweb", "web"]},
         },
     }
+    proxy = os.getenv("YTDLP_PROXY")
+    if proxy:
+        ydl_opts["proxy"] = proxy
     if YTDLP_COOKIES_FILE:
         ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
 
@@ -72,7 +77,8 @@ def download_video(url: str, filename_prefix: str = "source_video",
         "retries": 3,
         "fragment_retries": 3,
         "extractor_retries": 1,
-        "source_address": "0.0.0.0",
+        "geo_bypass": True,
+        "geo_bypass_country": "IN",
         # YouTube's default "web" client serves CDN URLs that are aggressively IP-locked
         # and commonly return "HTTP Error 403: Forbidden" from cloud/datacenter hosting.
         # The android/ios clients get less-restricted URLs, so try those first.
@@ -80,6 +86,9 @@ def download_video(url: str, filename_prefix: str = "source_video",
             "youtube": {"player_client": ["android", "ios", "mweb", "web"]},
         },
     }
+    proxy = os.getenv("YTDLP_PROXY")
+    if proxy:
+        ydl_opts["proxy"] = proxy
     if progress_hook:
         ydl_opts["progress_hooks"] = [progress_hook]
     if YTDLP_COOKIES_FILE:
